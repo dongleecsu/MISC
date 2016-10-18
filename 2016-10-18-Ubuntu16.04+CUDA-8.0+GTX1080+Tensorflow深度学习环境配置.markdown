@@ -1,0 +1,212 @@
+Ubuntu16.04+CUDA-8.0+GTX1080+Tensorflow深度学习环境配置
+=====
+前两天由于安装opencv，又把显卡驱动给弄崩溃了，一直在登陆界面，输入密码后进不去系统，又会自动跳转到登陆界面。。。进入命令行模式，结果`sudo stop lightdm`说是cannot connect XXX，感觉捣鼓来捣鼓去还不如重装系统来的快，只能默默重装系统，之前走了很多弯路，直到最后看到 [52NLP](http://www.52nlp.cn/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E4%B8%BB%E6%9C%BA%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE-ubuntu-16-04-nvidia-gtx-1080-cuda-8) 的文章，给了我很大的帮助，虽然在安装的过程中很大一部分都是采用那篇文章的方法，但是还是有一些不同的地方，为了以后有一个参考，所以把它记录下来。最后，再次感谢52NLP，github, Google以及热心的人们 :-)
+
+**目录**
+1. Ubuntu16.04系统安装
+2. 安装GTX 1080驱动
+3. 安装CUDA 8.0 及cuDNN v5
+4. 安装Opencv
+5. 安装tensorflow
+
+### Ubuntu16.04系统安装
+1. 在官网上下载Ubuntu16.04的镜像
+2. 在Windows下使用 Ultraiso 软件制作装机U盘
+3. 由于DELL工作站的BIOS是新版的（能用鼠标的，非传统BIOS样式），而且为了能在新分配的1T大小容量下安装Ubuntu，需要用UEFI模式，尝试了使用Legacy模式可以安装，但是安装之后找不到新系统，据说由于Legacy模式是比较传统的模式，最大搜寻的空间达不到1T，当前硬盘容量不断扩大，为了支持大容量硬盘，业界退出了UEFI模式，具体可以参考 [Ubuntu UEFI wiki](https://help.ubuntu.com/community/UEFI). 首先，拔掉电脑上其他硬盘，只留有需要安装Ubuntu的硬盘，开机按F2进入BIOS，选择 Load default，重启电脑（这时插上装机U盘），再次进入到BIOS，添加UEFI选项，Apply，重启，按F12选择UEFI栏下边的从U盘启动即可。
+4. 一直下一步，其中可能会说 _机子上装了其他系统，是否要继续，要继续可能会找不到其他系统_ （我尝试过选择返回，但是返回还是会进入到下一个界面，并且装完系统后找不到Boot，PS.我安装系统的这块硬盘是新硬盘，并没有其他系统，其他系统都在别的硬盘上，起先已经被拔下来了），这里选择继续。分配合适的硬盘大小给/,/home,SwampSpace，系统会提示还需要分配EFI Boot storage(好像是叫这个).最后点下一步，设置密码，安装，最后系统就会安装好。
+5. 装好后为了让其他硬盘的系统也能够正常进入，需要重启电脑，进入BIOS，把之前选择的UEFI模式切换回Legacy模式（这样做是因为UEFI模式下找不到Legacy模式安装的系统的boot，而Legacy模式下却可以找到UEFI模式下安装的系统的boot，好吧有点饶了。。。），以后要进入Ubuntu16.04，就必须开机按F12来选择UEFI下边的ubuntu来启动。虽然麻烦，Anyway，总之是装好了。
+6. 进入新系统后，更换Ubuntu16.04的源，使用中科大的源：
+```shell
+$ cd /etc/apt/
+$ sudo cp sources.list sources.list.bkp
+$ sudo gedit sources.list
+```
+把下面的源添加到source.list文件头部：
+```shell
+deb http://mirrors.ustc.edu.cn/ubuntu/ xenial main restricted universe multiverse
+deb http://mirrors.ustc.edu.cn/ubuntu/ xenial-security main restricted universe multiverse
+deb http://mirrors.ustc.edu.cn/ubuntu/ xenial-updates main restricted universe multiverse
+deb http://mirrors.ustc.edu.cn/ubuntu/ xenial-proposed main restricted universe multiverse
+deb http://mirrors.ustc.edu.cn/ubuntu/ xenial-backports main restricted universe multiverse
+deb-src http://mirrors.ustc.edu.cn/ubuntu/ xenial main restricted universe multiverse
+deb-src http://mirrors.ustc.edu.cn/ubuntu/ xenial-security main restricted universe multiverse
+deb-src http://mirrors.ustc.edu.cn/ubuntu/ xenial-updates main restricted universe multiverse
+deb-src http://mirrors.ustc.edu.cn/ubuntu/ xenial-proposed main restricted universe multiverse
+deb-src http://mirrors.ustc.edu.cn/ubuntu/ xenial-backports main restricted universe multiverse
+```
+更新一下：
+```shell
+$ sudo apt-get update
+```
+
+### 安装GTX 1080驱动
+验证安装驱动前系统是否有nvidia module：
+```
+$ lsmod | grep nvidia
+```
+发现并没有任何结果，这也是情理之中，因为我们还没有安装驱动。\
+使用ppa的repository来安装，具体如下：
+```shell
+$ sudo add-apt-repository ppa:graphics-drivers/ppa
+$ sudo apt-get install nvidia-367
+$ sudo apt-get install mesa-common-dev
+$ sudo apt-get install freeglut3-dev
+```
+重启系统，进入ubuntu16.04，就会发现屏幕分辨率明显变高了，整个世界都明朗了，可以用如下代码验证nvidia相关的驱动安装成功了：
+```
+$ lsmod | grep nvidia
+```
+就会出现一大堆和nvidia相关的，说明已经安装成功。
+
+
+### 安装CUDA 8.0 及cuDNN v5
+由于Ubuntu16.04自带的g++/gcc版本是5.4.0，版本过高，不能用于CUDA8.0以及后边需要安装的tensorflow的编译，因此我们把它降级到4.8.5，具体方法是：
+```shell
+$ sudo apt-get install g++-4.8
+$ sudo rm /usr/bin/g++
+$ sudo ln -s /usr/bin/g++-4.8 /usr/bin/g++
+$ sudo rm /usr/bin/gcc
+$ sudo ln -s /usr/bin/gcc-4.8 /usr/bin/gcc
+$ g++ --version
+```
+最后一条可以看到，我们已经把原来的5.4.0版本的g++替换为低版本的g++了。
+
+接下来安装CUDA8.0.注册账号，从[Nvidia官网](https://developer.nvidia.com/cuda-release-candidate-download)下载CUDA 8.0，选择对应的Ubuntu16.04下面的runfile(local)方式来安装，整个文件1.4G，下载完之后，进入cuda_8.0.27_linux.run所在的文件夹，执行
+```shell
+$ sudo sh cuda_8.0.27_linux.run
+```
+其中会让你进行一系列的选择，在第1条提示的时候问是否要安装nvidia显卡驱动361.62？**这里选择N**。这是因为我们在前面已经装了高版本的显卡驱动367。\
+接下来的所有提示都选择Y即可。就这样，CUDA8.0就成功安装了，安装完之后，进入home下面，ctrl+h来显示隐藏文件，在.bashrc的尾部添加
+```txt
+export PATH=/usr/local/cuda-8.0/bin${PATH:+:${PATH}}
+export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
+```
+记着在文件尾部流出一个空行哦～～重新开一个terminal，让刚刚添加的指令生效。\
+安装完之后，编译devicaQuery：
+```shell
+$ cd 1_Utilities/deviceQuery
+$ make
+$ ./deviceQuery
+```
+最后的结果是 `Result = PASS`，我们装成功了CUDA8.0.
+
+接下来安装cuDNN，进入到[nvidia官网下载界面](https://developer.nvidia.com/rdp/cudnn-download)，登陆之后，选择 _Download cuDNN v5, for CUDA 8.0RC_，下载完成后，解压文件，拷贝到相应CUDA文件夹，具体方法是：
+```shell
+$ tar -zxvf cudnn-8.0-linux-x64-v5.0-ga.tgz
+$ sudo cp cuda/include/cudnn.h /usr/local/cuda/include/
+$ sudo cp cuda/lib64/libcudnn* /usr/local/cuda/lib64/
+$ sudo chmod a+r /usr/local/cuda/include/cudnn.h
+$ sudo chmod a+r /usr/local/cuda/lib64/libcudnn*
+```
+
+### 安装Opencv
+之前好好的一个系统，就是由于完全采用 caffe github 主页的[这个方法](https://github.com/BVLC/caffe/wiki/Ubuntu-16.04-or-15.10-OpenCV-3.1-Installation-Guide)，导致了显卡驱动挂掉了，可能是由于opengl的问题，而且上边方法很繁琐，我安装的方法是：
+```
+$ sudo apt-get update
+$ sudo apt-get install libopencv-dev
+$ sudo apt-get install python-opencv
+```
+这样就成功安装了，可以在python下`import cv2`了。
+
+### 安装tensorflow
+这里采用的是编译源码来安装，首先安装相关依赖：
+```shell
+$ sudo apt-get install python-pip
+$ sudo apt-get install python-numpy swig python-dev python-wheel
+```
+接下来，使用Google指定的bazel来编译，这里使用的是bazel-0.3.0\
+安装bazel的时候，需要先安装jdk才可以：
+```shell
+$ sudo apt-get install default-jre
+$ sudo apt-get install default-jdk
+```
+接着下载bazel并安装
+```shell
+$ wget https://github.com/bazelbuild/bazel/releases/download/0.3.0/bazel-0.3.0-installer-linux-x86_64.sh
+$ chmod +x bazel-0.3.0-installer-linux-x86_64.sh
+$ ./bazel-0.3.0-installer-linux-x86_64.sh --user
+```
+紧接着，在.bashrc中添加：
+```txt
+source /home/YOUR NAME/.bazel/bin/bazel-complete.bash
+export PATH=$PATH:/home/YOUR NAME/.bazel/bin
+```
+重新开一个terminal，让刚刚添加的指令生效。
+
+安装依赖库，从Github上下载tensorflow并安装：
+```shell
+$ sudo apt-get install libcurl3 libcurl3-dev
+$ git clone https://github.com/tensorflow/tensorflow
+$ cd tensorflow
+$ ./configure
+```
+会有提示选择是否需要google 云平台支持，是否编译GPU版本，设置cuda, gcc等的位置。我是除了是否需要google云平台支持以及是否需要编译hadoop版本的之外，全部都是按回车，也就是默认选项。但是把改选的选完之后，就会报错：
+```txt
+ERROR: /home/chenl/tensorflow/tensorflow/tensorflow.bzl:571:26: Traceback (most recent call last):
+File "/home/chenl/tensorflow/tensorflow/tensorflow.bzl", line 565
+rule(attrs = {"srcs": attr.label_list..."), <3 more arguments>)}, <2 more arguments>)
+File "/home/chenl/tensorflow/tensorflow/tensorflow.bzl", line 571, in rule
+attr.label_list(cfg = "data", allow_files = True)
+expected ConfigurationTransition or NoneType for 'cfg' while calling label_list but got string instead: data.
+ERROR: com.google.devtools.build.lib.packages.BuildFileContainsErrorsException: error loading package '': Extension file 'tensorflow/tensorflow.bzl' has errors.
+Configuration finished
+```
+Google这个错误，发现在tensorflow主目录下，执行下面语句即可：
+```shell
+$ git checkout r0.10
+```
+接下来继续执行`./configure`按照上边的方法选择相应路径等，会下载一大堆东西，因此需要等待很长时间(大约15~20min)。
+
+**先看下面最近注意！！！**
+
+接下来使用bazel来编译安装:
+```shell
+bazel build -c opt --config=cuda //tensorflow/cc:tutorials_example_trainer
+```
+但是会报错和cuda库相关的错误：
+```txt
+./tensorflow/core/framework/allocator.h(155): warning: missing return statement at end of non-void function “tensorflow::Allocator::RequestedSize”
+
+./tensorflow/core/framework/allocator.h(155): warning: missing return statement at end of non-void function “tensorflow::Allocator::RequestedSize”
+
+./tensorflow/core/framework/allocator.h(155): warning: missing return statement at end of non-void function “tensorflow::Allocator::RequestedSize”
+
+gcc-4.9.real: error trying to exec ‘as’: execvp: No such file or directory
+ERROR: /home/ld/tensorflow/tensorflow/core/kernels/BUILD:1601:1: output ‘tensorflow/core/kernels/_objs/batch_space_ops_gpu/tensorflow/core/kernels/spacetobatch_functor_gpu.cu.pic.o’ was not created.
+ERROR: /home/ld/tensorflow/tensorflow/core/kernels/BUILD:1601:1: not all outputs were created.
+Target //tensorflow/cc:tutorials_example_trainer failed to build
+```
+解决方法是在`tensorflow/third_party/gpus/crosstool/CROSSTOOL.tpl`的大概65行左右加上`cxx_builtin_include_directory: "/usr/local/cuda-8.0/include"`即可解决上边的编译错误。
+
+我这是第二次安装了，由于之前已经遇到了这个问题，因此我在执行完`./configure`后直接在CROSSTOOL.tpl中加入上边的语句，想着应该就可以直接用bazel编译了，但是。。。too young too naive， 只要变了CROSSTOOL.tpl文件，就相当于改变了整个配置文件，直接编译又会报错：
+```txt
+bazel build -c opt --config=cuda //tensorflow/cc:tutorials_example_trainer
+ERROR: no such package '@local_config_cuda//crosstool': BUILD file not found on package path.
+ERROR: no such package '@local_config_cuda//crosstool': BUILD file not found on package path.
+```
+**注意（对，就是我，我知道你从上边跳转过来的）：** 看来只能默默的在去执行`./configure`下载一大堆东西，好慢。。。好艰难。。。（为什么不下载了tensorflow之后，直接在CROSSTOOL.tpl中添加那条语句呢，因为直接clone下来的文件里边是和./configure之后长的不一样的，65行左右连其他的`cxx_builtin_include_directory`都没有，所以必须一共执行2次`./configure）。但是，我看到  [52NLP](http://www.52nlp.cn/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E4%B8%BB%E6%9C%BA%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE-ubuntu16-04-geforce-gtx1080-tensorflow) 的文档中没有提到这一步，因此，可能有的电脑也不需要在CROSSTOOL.tpl中添加相关语句？不太清楚。
+
+经过了上边的纠结之后，在此执行
+```shell
+$ bazel build -c opt --config=cuda //tensorflow/cc:tutorials_example_trainer
+```
+就可以完全编译通过了。
+
+验证是否可以成功调用GTX 1080：
+```shell
+$ bazel-bin/tensorflow/cc/tutorials_example_trainer --use_gpu
+```
+接下来编译python版本的tensorflow：
+```shell
+$ bazel build -c opt --config=cuda //tensorflow/tools/pip_package:build_pip_package
+$ bazel-bin/tensorflow/tools/pip_package/build_pip_package /tmp/tensorflow_pkg
+$ sudo pip install /tmp/tensorflow_pkg/tensorflow-0.1.0-py2-none-any.whl
+```
+打开python，尝试`import tensorflow as tf`就成功了～～
+
+------
+本文参考了：
+1. http://www.52nlp.cn/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E4%B8%BB%E6%9C%BA%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE-ubuntu-16-04-nvidia-gtx-1080-cuda-8
+2. http://www.52nlp.cn/%E6%B7%B1%E5%BA%A6%E5%AD%A6%E4%B9%A0%E4%B8%BB%E6%9C%BA%E7%8E%AF%E5%A2%83%E9%85%8D%E7%BD%AE-ubuntu16-04-geforce-gtx1080-tensorflow
+3. https://github.com/tensorflow/tensorflow/issues/4483
+4. https://github.com/tensorflow/tensorflow/issues/4105

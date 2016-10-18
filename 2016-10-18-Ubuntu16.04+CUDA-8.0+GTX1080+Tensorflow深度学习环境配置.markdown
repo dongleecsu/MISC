@@ -44,7 +44,8 @@ $ sudo apt-get update
 ```
 $ lsmod | grep nvidia
 ```
-发现并没有任何结果，这也是情理之中，因为我们还没有安装驱动。\
+发现并没有任何结果，这也是情理之中，因为我们还没有安装驱动。
+
 使用ppa的repository来安装，具体如下：
 ```shell
 $ sudo add-apt-repository ppa:graphics-drivers/ppa
@@ -75,13 +76,15 @@ $ g++ --version
 ```shell
 $ sudo sh cuda_8.0.27_linux.run
 ```
-其中会让你进行一系列的选择，在第1条提示的时候问是否要安装nvidia显卡驱动361.62？**这里选择N**。这是因为我们在前面已经装了高版本的显卡驱动367。\
+其中会让你进行一系列的选择，在第1条提示的时候问是否要安装nvidia显卡驱动361.62？**这里选择N**。这是因为我们在前面已经装了高版本的显卡驱动367。
+
 接下来的所有提示都选择Y即可。就这样，CUDA8.0就成功安装了，安装完之后，进入home下面，ctrl+h来显示隐藏文件，在.bashrc的尾部添加
 ```txt
 export PATH=/usr/local/cuda-8.0/bin${PATH:+:${PATH}}
 export LD_LIBRARY_PATH=/usr/local/cuda-8.0/lib64${LD_LIBRARY_PATH:+:${LD_LIBRARY_PATH}}
 ```
-记着在文件尾部流出一个空行哦～～重新开一个terminal，让刚刚添加的指令生效。\
+记着在文件尾部流出一个空行哦～～重新开一个terminal，让刚刚添加的指令生效。
+
 安装完之后，编译devicaQuery：
 ```shell
 $ cd 1_Utilities/deviceQuery
@@ -114,7 +117,8 @@ $ sudo apt-get install python-opencv
 $ sudo apt-get install python-pip
 $ sudo apt-get install python-numpy swig python-dev python-wheel
 ```
-接下来，使用Google指定的bazel来编译，这里使用的是bazel-0.3.0\
+接下来，使用Google指定的bazel来编译，这里使用的是bazel-0.3.0
+
 安装bazel的时候，需要先安装jdk才可以：
 ```shell
 $ sudo apt-get install default-jre

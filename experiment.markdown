@@ -39,3 +39,4 @@ reward = penalty * np.abs(obs["trackPos"]) - 0.5 * np.abs(obs["speedX"] * np.sin
 - 由于状态中已经包含了速度，尝试去掉`hist_len`试一试
 - 从一开始就学习，即`learn_start = 0`
 - reward是否需要变好？
+- 每一个 step 都进行train，即`update_freq = 1`

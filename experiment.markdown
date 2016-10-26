@@ -83,7 +83,48 @@ reward = penalty * np.abs(obs["trackPos"]) - 0.5 * np.abs(obs["speedX"] * np.sin
 
 **可能的改变：**
 
-- 把reward重新设置
-- 减少神经元的数量
-- 减小学习率
-- 是不是把问题过于复杂化了
+- 把reward重新设置 (YES)
+- 减少神经元的数量 (YES)
+- 减小学习率 (NO)
+- 是不是把问题过于复杂化了，因此简化问题 (YES)
+
+
+### 2. Not good
+**参数：**
+```python
+experiment_parameters = {
+        "max_episodes" : 2000,
+        "max_steps" : 10000,
+        "memory_size" : 50000,
+        "learn_start" : 1,
+        "update_freq": 1,
+        "save_freq": 200,
+        "save_base": "./output/model",
+        "discount": 0.99,
+        "ep_start" : 1.,
+        "ep_end" : 0.1,
+        "ep_endt" : 5000,
+        "lr" : 0.00025,
+        "tau": 0.001,
+        "batch_size" : 32,
+        "hidden_units_1": 10,
+        "state_dim": 3, # Check this
+        "vision": False,
+        "is_train": True
+    }
+reward = speed * np.cos(obs["angle"]) - 1.7 * speed * np.sin(np.abs(obs["angle"])) - speed * np.abs(obs["trackPos"]) 
+agent.steers = [-1.0, -0.5, -0.2, 0.0, 0.2, 0.5, 1.0]
+```
+
+**现象：**
+
+这次学习的时候没有探索阶段，一上来就直接学的，在前1000个episode的时候，`return`基本持平。1000~1800个episode又是下一个阶段，
+这一阶段比上一个阶段的`return`要高160左右。而在1800个episode之后，`return`有了大幅度的提升，但是训练结束在第2000个episode处。
+有再次接着训练的必要。
+
+**小结：**
+
+这一次的训练结果可以说是前几次中最好的，但是每次学习都有一个很长的平台期，也就是有很长一段时间`return`的数值都不怎么变好。这或许是由于
+学习率有点低？TRY higher lr :)
+
+

@@ -12,7 +12,7 @@ struct shared_use_st
     float z;
 };
 ```
-**注意：**由于内存的对齐机制（主要是为了快速的进行内存操作）使得变量在内存中是以_word_的形式存储的，而非_byte_，因此，可以打印出来`x,y,z`的地址来看：
+**注意：**这里是_int_类型在_unsigned char_之前，由于内存的对齐机制（主要是为了快速的进行内存操作）使得变量在内存中是以_word_的形式存储的，而非_byte_，因此，可以打印出来`x,y,z`的地址来看：
 ```cpp
 std::cout << "int: &x = " << &shared->x << "\n";
 std::cout << "uchar: &y = " << static_cast<const void*>(&shared->y) << "\n";
@@ -24,8 +24,9 @@ uchar: &y = 0x7f7e54c92004
 float: &z = 0x7f7e54c92008
 **********************/
 ```  
-即使`sizeof(unsigned char) = 1`，它在内存中存储时也会占据4个bytes。这一点在python server写入数据时，尤其要注意_offset_。
-### python server  
+即使`sizeof(unsigned char) = 1`，它在内存中存储时也会占据4个bytes。这一点在python server写入数据时，尤其要注意_offset_.  
+**但是把unsigned char放在int和float前面时，它占据的又是1个byte，因此，为了方便操作和节省内存，工程中创建的shared_use_st总是uint8_t在前而float在后！但是这里只是示意性的例子，所以变量顺序无所谓。**
+### python server 
 python server向共享内存中写入数据，在cpp client中读取相应地址的数据，检查是否一致。
 
 **注意：**由于上边提到的内存对齐机制，即使写入size=1的字符串也要_offset=4_。

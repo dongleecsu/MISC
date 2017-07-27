@@ -41,7 +41,7 @@ In function createGen msg
 ```
 首先，我们分别调用了函数`createGen()`和`func()`。先说说较为简单的`func()`，当我们调用该函数时，程序进入函数体，执行第一个`print`打印出相应的消息，之后遇到`return`后，会返回后面的1给变量`fn`，所以此时`fn`是一个整型数。`return`之后的第二个`print`永远也不会被执行。这与我们平常的理解都完全相同。
 
-对于语句`gen = createGen()`，其调用函数的机制与函数`func()`大为不同。由于函数使用`yield`返回，因此其返回是一个generator（暂时只需要记住它可是可迭代的），在仅仅执行`gen = createGen()`时，函数并没有显式的执行，而仅仅返回了一个generator对象。由于generator遵从 *iterable protocol*， 即具有`__iter__()`和`next()`方法，可以**一次输出一个数据**，可以用于`for  in`语句中。因此，再后面的for循环中，其执行情况是：\
+对于语句`gen = createGen()`，其调用函数的机制与函数`func()`大为不同。由于函数使用`yield`返回，因此其返回是一个generator（暂时只需要记住它可是可迭代的），在仅仅执行`gen = createGen()`时，函数并没有显式的执行，而仅仅返回了一个generator对象，该函数只有在`gen`迭代时会执行。由于generator遵从 *iterable protocol*， 即具有`__iter__()`和`next()（对于python3而言，是__next__()）`方法，可以**一次输出一个数据**，可以用于`for  in`语句中。因此，在后面的for循环中，其执行情况是：\
 第一次执行for循环，程序会进入函数`createGen()`从头开始执行直到遇到`yield`，首先打印消息`print 'In function createGen msg'`，接着函数返回1给`i`，在for循环中，打印i的数值。由于`gen`的数据流还没有耗尽，`next()`没有扔出`StopIteration`异常，进行下一次循环；\
 第二次执行for循环，程序会从函数`createGen()`断点恢复继续执行直至遇到下一个`yield 3`，回3给`i`，在for循环中，打印i的数值。由于`gen`的数据流还没有耗尽，`next()`没有扔出`StopIteration`异常，进行下一次循环；\
 第三次执行for循环，程序会从函数`createGen()`断点恢复继续执行直至遇到下一个`yield 5`，回3给`i`，在for循环中，打印i的数值。由于`gen`的数据流还没有耗尽，`next()`没有扔出`StopIteration`异常，进行下一次循环；\

@@ -1,5 +1,4 @@
-当我们阅读python代码时，经常会发现某个函数中带有`yield`关键字。上网Google之，发现有一大堆答案，但都无不包含 _iterable_, _iterator_, _generator_，
-看的人真心眼花缭乱，尤其对于刚刚上手python的人，本想好好的学习下`yield`是干什么用的，结果越看越混乱。
+当我们阅读python代码时，经常会发现某个函数中带有`yield`关键字。上网Google之，发现有一大堆答案，但都无不包含 _iterable_, _iterator_, _generator_，看的人真心眼花缭乱，尤其对于刚刚上手python的人，本想好好的学习下`yield`是干什么用的，结果越看越混乱。
 
 仔细看了python官方的[文档](https://docs.python.org/3.5/glossary.html#term-generator)和Stack Overflow上众大神的[回答](https://stackoverflow.com/questions/231767/what-does-the-yield-keyword-do-in-python)，根据一个小例子总结`yield`的用法。主要回答两个问题：
 - yield的具体功能是什么？
